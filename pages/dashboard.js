@@ -5,7 +5,8 @@ export default function DashboardV2() {
 
   const fetchPedidos = async () => {
     try {
-      const res = await fetch("/api/pedidos");
+      const negocio_id = localStorage.getItem("negocio_id"); // negocio que inició sesión
+      const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
       const data = await res.json();
       setPedidos(data);
     } catch (error) {
@@ -46,23 +47,56 @@ export default function DashboardV2() {
   };
 
   return (
-    <div style={{ padding: "30px", fontFamily: "Inter, sans-serif", backgroundColor: "#f5f6fa", minHeight: "100vh" }}>
-      <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "20px" }}>📦 Panel de Pedidos</h1>
+    <div
+      style={{
+        padding: "30px",
+        fontFamily: "Inter, sans-serif",
+        backgroundColor: "#f5f6fa",
+        minHeight: "100vh",
+      }}
+    >
+      <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "20px" }}>
+        📦 Panel de Pedidos
+      </h1>
 
       <div style={{ display: "flex", gap: "20px", marginBottom: "30px" }}>
-        <div style={{ flex: 1, background: "#fff8b0", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+        <div
+          style={{
+            flex: 1,
+            background: "#fff8b0",
+            padding: "20px",
+            borderRadius: "12px",
+            textAlign: "center",
+          }}
+        >
           <h3>Pendientes</h3>
           <p style={{ fontSize: "24px", fontWeight: "600" }}>
             {pedidos.filter((p) => p.estado === "pendiente").length}
           </p>
         </div>
-        <div style={{ flex: 1, background: "#b0d4ff", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+        <div
+          style={{
+            flex: 1,
+            background: "#b0d4ff",
+            padding: "20px",
+            borderRadius: "12px",
+            textAlign: "center",
+          }}
+        >
           <h3>En camino</h3>
           <p style={{ fontSize: "24px", fontWeight: "600" }}>
             {pedidos.filter((p) => p.estado === "en_camino").length}
           </p>
         </div>
-        <div style={{ flex: 1, background: "#b0ffb0", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+        <div
+          style={{
+            flex: 1,
+            background: "#b0ffb0",
+            padding: "20px",
+            borderRadius: "12px",
+            textAlign: "center",
+          }}
+        >
           <h3>Entregados</h3>
           <p style={{ fontSize: "24px", fontWeight: "600" }}>
             {pedidos.filter((p) => p.estado === "entregado").length}
@@ -70,7 +104,14 @@ export default function DashboardV2() {
         </div>
       </div>
 
-      <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }}>
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "12px",
+          padding: "20px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+        }}
+      >
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ backgroundColor: "#e9ecef", textAlign: "left" }}>
@@ -85,7 +126,10 @@ export default function DashboardV2() {
           </thead>
           <tbody>
             {pedidos.map((p) => (
-              <tr key={p.id} style={{ backgroundColor: colorEstado(p.estado), transition: "0.3s" }}>
+              <tr
+                key={p.id}
+                style={{ backgroundColor: colorEstado(p.estado), transition: "0.3s" }}
+              >
                 <td style={{ padding: "10px" }}>{p.id}</td>
                 <td style={{ padding: "10px" }}>{p.cliente_nombre}</td>
                 <td style={{ padding: "10px" }}>{p.cliente_numero}</td>
