@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 export default function Dashboard() {
   const [pedidos, setPedidos] = useState([]);
 
-  // Función para traer los pedidos del endpoint (backend serverless)
   const fetchPedidos = async () => {
     try {
-      const res = await fetch("/api/pedidos"); // más adelante crearemos este endpoint
+      const res = await fetch("/api/pedidos");
       const data = await res.json();
       setPedidos(data);
     } catch (error) {
@@ -14,12 +13,33 @@ export default function Dashboard() {
     }
   };
 
-  // useEffect para actualizar automáticamente cada 5 segundos
   useEffect(() => {
-    fetchPedidos(); // carga inicial
+    fetchPedidos();
     const interval = setInterval(fetchPedidos, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const cambiarEstado = async (id, estado) => {
+    try {
+      await fetch(`/api/pedidos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado })
+      });
+      fetchPedidos(); // actualizar tabla
+    } catch (error) {
+      console.error("Error actualizando estado:", error);
+    }
+  };
+
+  const colorEstado = estado => {
+    switch(estado) {
+      case 'pendiente': return '#FFF8B0'; // amarillo claro
+      case 'en_camino': return '#B0D4FF'; // azul claro
+      case 'entregado': return '#B0FFB0'; // verde claro
+      default: return 'white';
+    }
+  };
 
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
@@ -33,17 +53,22 @@ export default function Dashboard() {
             <th>Pedido</th>
             <th>Total</th>
             <th>Estado</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {pedidos.map(p => (
-            <tr key={p.id}>
+            <tr key={p.id} style={{ backgroundColor: colorEstado(p.estado) }}>
               <td>{p.id}</td>
               <td>{p.cliente_nombre}</td>
               <td>{p.cliente_numero}</td>
               <td>{p.pedido}</td>
               <td>{p.total}</td>
               <td>{p.estado}</td>
+              <td>
+                <button onClick={() => cambiarEstado(p.id, 'en_camino')}>En camino</button>
+                <button onClick={() => cambiarEstado(p.id, 'entregado')}>Entregado</button>
+              </td>
             </tr>
           ))}
         </tbody>
