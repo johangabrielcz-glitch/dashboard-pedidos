@@ -1,23 +1,16 @@
 // pages/dashboard.js
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import cookie from "js-cookie"; // para manejar cookies en el cliente
+import cookie from "js-cookie";
 
 export default function DashboardV2() {
   const router = useRouter();
   const [pedidos, setPedidos] = useState([]);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    const negocio_id = cookie.get("negocio_id");
+    const negocio_id = cookie.get("negocio_id"); // leer la cookie
     if (!negocio_id) {
-      router.push("/"); // no hay sesión → login
+      router.replace("/"); // redirige si no hay sesión
       return;
     }
 
@@ -34,7 +27,7 @@ export default function DashboardV2() {
     fetchPedidos();
     const interval = setInterval(fetchPedidos, 5000);
     return () => clearInterval(interval);
-  }, [mounted, router]);
+  }, [router]);
 
   const cambiarEstado = async (id, estado) => {
     try {
@@ -65,8 +58,6 @@ export default function DashboardV2() {
     }
   };
 
-  if (!mounted) return null;
-
   return (
     <div
       style={{
@@ -82,7 +73,7 @@ export default function DashboardV2() {
         onClick={() => {
           cookie.remove("negocio_id");
           cookie.remove("negocio_nombre");
-          router.push("/");
+          router.replace("/"); // redirige a login
         }}
         style={{
           position: "absolute",
@@ -219,24 +210,4 @@ export default function DashboardV2() {
       </div>
     </div>
   );
-}
-
-// Esto hace que Next.js redirija antes de renderizar si no hay sesión
-export async function getServerSideProps({ req }) {
-  const cookies = req.headers.cookie || "";
-  const negocio_id = cookies
-    .split(";")
-    .find((c) => c.trim().startsWith("negocio_id="))
-    ?.split("=")[1];
-
-  if (!negocio_id) {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
-  }
-
-  return { props: {} };
 }
