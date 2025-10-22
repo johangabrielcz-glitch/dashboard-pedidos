@@ -1,12 +1,13 @@
+// pages/dashboard.js
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import cookie from "js-cookie"; // para manejar cookies en el cliente
 
 export default function DashboardV2() {
   const router = useRouter();
   const [pedidos, setPedidos] = useState([]);
-  const [mounted, setMounted] = useState(false); // para evitar SSR
+  const [mounted, setMounted] = useState(false);
 
-  // Verificar que estamos en cliente
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -14,7 +15,7 @@ export default function DashboardV2() {
   useEffect(() => {
     if (!mounted) return;
 
-    const negocio_id = localStorage.getItem("negocio_id");
+    const negocio_id = cookie.get("negocio_id");
     if (!negocio_id) {
       router.push("/"); // no hay sesión → login
       return;
@@ -42,8 +43,7 @@ export default function DashboardV2() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado }),
       });
-      // actualizar tabla
-      const negocio_id = localStorage.getItem("negocio_id");
+      const negocio_id = cookie.get("negocio_id");
       const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
       const data = await res.json();
       setPedidos(data);
@@ -65,7 +65,7 @@ export default function DashboardV2() {
     }
   };
 
-  if (!mounted) return null; // nada mientras no estemos en cliente
+  if (!mounted) return null;
 
   return (
     <div
@@ -80,9 +80,9 @@ export default function DashboardV2() {
       {/* Botón Cerrar sesión */}
       <button
         onClick={() => {
-          localStorage.removeItem("negocio_id");
-          localStorage.removeItem("negocio_nombre");
-          router.push("/"); // redirige al login
+          cookie.remove("negocio_id");
+          cookie.remove("negocio_nombre");
+          router.push("/");
         }}
         style={{
           position: "absolute",
@@ -219,4 +219,24 @@ export default function DashboardV2() {
       </div>
     </div>
   );
+}
+
+// Esto hace que Next.js redirija antes de renderizar si no hay sesión
+export async function getServerSideProps({ req }) {
+  const cookies = req.headers.cookie || "";
+  const negocio_id = cookies
+    .split(";")
+    .find((c) => c.trim().startsWith("negocio_id="))
+    ?.split("=")[1];
+
+  if (!negocio_id) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  return { props: {} };
 }
