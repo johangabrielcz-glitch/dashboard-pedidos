@@ -23,7 +23,6 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({ estado })
     });
-
     const supabaseResult = await supabaseResp.text();
     console.log("Respuesta de Supabase:", supabaseResult);
 
@@ -38,13 +37,26 @@ export default async function handler(req, res) {
     const pedidoObj = pedidoData[0];
     console.log("Pedido actualizado:", pedidoObj);
 
-    // 3️⃣ Enviar mensaje vía BuilderBot solo si el estado cambió
+    // 3️⃣ Obtener bot_id y builderbot_api_key del negocio
+    const negocioData = await fetch(`${process.env.SUPABASE_URL}/rest/v1/negocios?id=eq.${pedidoObj.negocio_id}`, {
+      headers: {
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+      }
+    }).then(r => r.json());
+
+    if (!negocioData[0]) {
+      return res.status(400).json({ error: 'Negocio no encontrado' });
+    }
+
+    const botId = negocioData[0].bot_id;
+    const builderBotApiKey = negocioData[0].builderbot_api_key;
+
+    // 4️⃣ Enviar mensaje vía BuilderBot si aplica
     if (estado === 'en_camino' || estado === 'entregado') {
       const mensaje = estado === 'en_camino'
         ? `Hola ${pedidoObj.cliente_nombre}! Tu pedido ya va en camino. Gracias por tu compra 💛`
         : `Hola ${pedidoObj.cliente_nombre}! Tu pedido ha sido entregado. ¡Disfrútalo!`;
-
-      const botId = pedidoObj.bot_id; // Asegúrate de que la tabla tenga esta columna
 
       console.log("Enviando mensaje a BuilderBot:", { numero: pedidoObj.cliente_numero, mensaje, botId });
 
@@ -52,7 +64,7 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-builderbot': process.env.BUILDERBOT_API_KEY
+          'x-api-builderbot': builderBotApiKey
         },
         body: JSON.stringify({
           messages: { content: mensaje },
