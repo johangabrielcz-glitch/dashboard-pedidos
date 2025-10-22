@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Negocio no encontrado' });
     }
 
-    const botId = negocioData[0].bot_id;
+    const botId = negocioData[0].builderbot_bot_id; // columna corregida
     const builderBotApiKey = negocioData[0].builderbot_api_key;
 
     // 4️⃣ Enviar mensaje vía BuilderBot si aplica
