@@ -1,31 +1,30 @@
 // pages/dashboard.js
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import cookie from "js-cookie";
 
 export default function DashboardV2() {
   const router = useRouter();
   const [pedidos, setPedidos] = useState([]);
 
-  useEffect(() => {
-    const negocio_id = cookie.get("negocio_id"); // leer la cookie
-    if (!negocio_id) {
-      router.replace("/"); // redirige si no hay sesión
-      return;
-    }
-
-    const fetchPedidos = async () => {
-      try {
-        const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
-        const data = await res.json();
-        setPedidos(data);
-      } catch (error) {
-        console.error("Error cargando pedidos:", error);
+  // Función para cargar los pedidos
+  const fetchPedidos = async () => {
+    try {
+      const negocio_id = localStorage.getItem("negocio_id"); // negocio que inició sesión
+      if (!negocio_id) {
+        router.replace("/"); // redirige al login si no hay negocio_id
+        return;
       }
-    };
+      const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
+      const data = await res.json();
+      setPedidos(data);
+    } catch (error) {
+      console.error("Error cargando pedidos:", error);
+    }
+  };
 
-    fetchPedidos();
-    const interval = setInterval(fetchPedidos, 5000);
+  useEffect(() => {
+    fetchPedidos(); // primera carga
+    const interval = setInterval(fetchPedidos, 5000); // actualizar cada 5 seg
     return () => clearInterval(interval);
   }, [router]);
 
@@ -36,10 +35,7 @@ export default function DashboardV2() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado }),
       });
-      const negocio_id = cookie.get("negocio_id");
-      const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
-      const data = await res.json();
-      setPedidos(data);
+      fetchPedidos(); // refresca tabla
     } catch (error) {
       console.error("Error actualizando estado:", error);
     }
@@ -47,32 +43,20 @@ export default function DashboardV2() {
 
   const colorEstado = (estado) => {
     switch (estado) {
-      case "pendiente":
-        return "#FFF7AE";
-      case "en_camino":
-        return "#BEE3FF";
-      case "entregado":
-        return "#C2FFBE";
-      default:
-        return "white";
+      case "pendiente": return "#FFF7AE";
+      case "en_camino": return "#BEE3FF";
+      case "entregado": return "#C2FFBE";
+      default: return "white";
     }
   };
 
   return (
-    <div
-      style={{
-        padding: "30px",
-        fontFamily: "Inter, sans-serif",
-        backgroundColor: "#f5f6fa",
-        minHeight: "100vh",
-        position: "relative",
-      }}
-    >
+    <div style={{ padding: "30px", fontFamily: "Inter, sans-serif", backgroundColor: "#f5f6fa", minHeight: "100vh", position: "relative" }}>
+      
       {/* Botón Cerrar sesión */}
       <button
         onClick={() => {
-          cookie.remove("negocio_id");
-          cookie.remove("negocio_nombre");
+          localStorage.removeItem("negocio_id");
           router.replace("/"); // redirige a login
         }}
         style={{
@@ -90,48 +74,22 @@ export default function DashboardV2() {
         Cerrar sesión
       </button>
 
-      <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "20px" }}>
-        📦 Panel de Pedidos
-      </h1>
+      <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "20px" }}>📦 Panel de Pedidos</h1>
 
       <div style={{ display: "flex", gap: "20px", marginBottom: "30px" }}>
-        <div
-          style={{
-            flex: 1,
-            background: "#fff8b0",
-            padding: "20px",
-            borderRadius: "12px",
-            textAlign: "center",
-          }}
-        >
+        <div style={{ flex: 1, background: "#fff8b0", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
           <h3>Pendientes</h3>
           <p style={{ fontSize: "24px", fontWeight: "600" }}>
             {pedidos.filter((p) => p.estado === "pendiente").length}
           </p>
         </div>
-        <div
-          style={{
-            flex: 1,
-            background: "#b0d4ff",
-            padding: "20px",
-            borderRadius: "12px",
-            textAlign: "center",
-          }}
-        >
+        <div style={{ flex: 1, background: "#b0d4ff", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
           <h3>En camino</h3>
           <p style={{ fontSize: "24px", fontWeight: "600" }}>
             {pedidos.filter((p) => p.estado === "en_camino").length}
           </p>
         </div>
-        <div
-          style={{
-            flex: 1,
-            background: "#b0ffb0",
-            padding: "20px",
-            borderRadius: "12px",
-            textAlign: "center",
-          }}
-        >
+        <div style={{ flex: 1, background: "#b0ffb0", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
           <h3>Entregados</h3>
           <p style={{ fontSize: "24px", fontWeight: "600" }}>
             {pedidos.filter((p) => p.estado === "entregado").length}
@@ -139,14 +97,7 @@ export default function DashboardV2() {
         </div>
       </div>
 
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "20px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-        }}
-      >
+      <div style={{ backgroundColor: "white", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ backgroundColor: "#e9ecef", textAlign: "left" }}>
@@ -161,13 +112,7 @@ export default function DashboardV2() {
           </thead>
           <tbody>
             {pedidos.map((p) => (
-              <tr
-                key={p.id}
-                style={{
-                  backgroundColor: colorEstado(p.estado),
-                  transition: "0.3s",
-                }}
-              >
+              <tr key={p.id} style={{ backgroundColor: colorEstado(p.estado), transition: "0.3s" }}>
                 <td style={{ padding: "10px" }}>{p.id}</td>
                 <td style={{ padding: "10px" }}>{p.cliente_nombre}</td>
                 <td style={{ padding: "10px" }}>{p.cliente_numero}</td>
@@ -177,28 +122,13 @@ export default function DashboardV2() {
                 <td style={{ padding: "10px" }}>
                   <button
                     onClick={() => cambiarEstado(p.id, "en_camino")}
-                    style={{
-                      backgroundColor: "#007bff",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      padding: "8px 12px",
-                      marginRight: "8px",
-                      cursor: "pointer",
-                    }}
+                    style={{ backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "8px", padding: "8px 12px", marginRight: "8px", cursor: "pointer" }}
                   >
                     En camino
                   </button>
                   <button
                     onClick={() => cambiarEstado(p.id, "entregado")}
-                    style={{
-                      backgroundColor: "#28a745",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      padding: "8px 12px",
-                      cursor: "pointer",
-                    }}
+                    style={{ backgroundColor: "#28a745", color: "white", border: "none", borderRadius: "8px", padding: "8px 12px", cursor: "pointer" }}
                   >
                     Entregado
                   </button>
