@@ -1,34 +1,39 @@
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 
 export default function DashboardV2() {
+  const router = useRouter();
   const [pedidos, setPedidos] = useState([]);
-  const [loading, setLoading] = useState(true); // verifica sesión
+  const [mounted, setMounted] = useState(false); // para evitar SSR
 
-  const fetchPedidos = async () => {
-    try {
-      const negocio_id = localStorage.getItem("negocio_id");
-      if (!negocio_id) return;
-
-      const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
-      const data = await res.json();
-      setPedidos(data);
-    } catch (error) {
-      console.error("Error cargando pedidos:", error);
-    }
-  };
-
-  // 🔹 Verificación de sesión + polling
+  // Verificar que estamos en cliente
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const negocio_id = localStorage.getItem("negocio_id");
     if (!negocio_id) {
-      window.location.href = "/"; // no logueado → login
+      router.push("/"); // no hay sesión → login
       return;
     }
+
+    const fetchPedidos = async () => {
+      try {
+        const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
+        const data = await res.json();
+        setPedidos(data);
+      } catch (error) {
+        console.error("Error cargando pedidos:", error);
+      }
+    };
+
     fetchPedidos();
     const interval = setInterval(fetchPedidos, 5000);
-    setLoading(false); // sesión confirmada
     return () => clearInterval(interval);
-  }, []);
+  }, [mounted, router]);
 
   const cambiarEstado = async (id, estado) => {
     try {
@@ -37,7 +42,11 @@ export default function DashboardV2() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado }),
       });
-      fetchPedidos();
+      // actualizar tabla
+      const negocio_id = localStorage.getItem("negocio_id");
+      const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
+      const data = await res.json();
+      setPedidos(data);
     } catch (error) {
       console.error("Error actualizando estado:", error);
     }
@@ -56,8 +65,7 @@ export default function DashboardV2() {
     }
   };
 
-  // 🔹 Mientras se confirma sesión, no renderiza nada
-  if (loading) return null;
+  if (!mounted) return null; // nada mientras no estemos en cliente
 
   return (
     <div
@@ -69,12 +77,12 @@ export default function DashboardV2() {
         position: "relative",
       }}
     >
-      {/* Botón de cerrar sesión */}
+      {/* Botón Cerrar sesión */}
       <button
         onClick={() => {
           localStorage.removeItem("negocio_id");
           localStorage.removeItem("negocio_nombre");
-          window.location.href = "/";
+          router.push("/"); // redirige al login
         }}
         style={{
           position: "absolute",
