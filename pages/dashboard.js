@@ -1,14 +1,3 @@
-useEffect(() => {
-  const negocio_id = localStorage.getItem("negocio_id");
-  if (!negocio_id) {
-    window.location.href = "/"; // no logueado, redirige al login
-    return;
-  }
-  fetchPedidos();
-  const interval = setInterval(fetchPedidos, 5000);
-  return () => clearInterval(interval);
-}, []);
-
 import { useEffect, useState } from "react";
 
 export default function DashboardV2() {
