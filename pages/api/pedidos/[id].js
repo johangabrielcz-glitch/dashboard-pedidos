@@ -58,23 +58,36 @@ export default async function handler(req, res) {
         ? `Hola ${pedidoObj.cliente_nombre}! Tu pedido ya va en camino. Gracias por tu compra 💛`
         : `Hola ${pedidoObj.cliente_nombre}! Tu pedido ha sido entregado. ¡Disfrútalo!`;
 
-      console.log("Enviando mensaje a BuilderBot:", { numero: pedidoObj.cliente_numero, mensaje, botId });
-
-      const builderResp = await fetch(`https://app.builderbot.cloud/api/v2/${botId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-builderbot': builderBotApiKey
-        },
-        body: JSON.stringify({
-          messages: { content: mensaje },
-          number: pedidoObj.cliente_numero,
-          checkIfExists: true
-        })
+      console.log("Preparando fetch a BuilderBot:", {
+        botId,
+        numero: pedidoObj.cliente_numero,
+        mensaje,
+        builderBotApiKeyPresent: !!builderBotApiKey
       });
 
-      const builderResult = await builderResp.text();
-      console.log("Respuesta de BuilderBot:", builderResult);
+      try {
+        const builderResp = await fetch(`https://app.builderbot.cloud/api/v2/${botId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-builderbot': builderBotApiKey
+          },
+          body: JSON.stringify({
+            messages: { content: mensaje },
+            number: pedidoObj.cliente_numero,
+            checkIfExists: true
+          })
+        });
+
+        const builderResult = await builderResp.text();
+        console.log("Respuesta de BuilderBot:", builderResult);
+
+        if (!builderResp.ok) {
+          console.error("Error al enviar mensaje a BuilderBot:", builderResp.status, builderResult);
+        }
+      } catch (err) {
+        console.error("Excepción al enviar mensaje a BuilderBot:", err);
+      }
     }
 
     res.status(200).json({ success: true });
