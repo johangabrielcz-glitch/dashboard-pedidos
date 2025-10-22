@@ -5,7 +5,9 @@ export default function DashboardV2() {
 
   const fetchPedidos = async () => {
     try {
-      const negocio_id = localStorage.getItem("negocio_id"); // negocio que inició sesión
+      const negocio_id = localStorage.getItem("negocio_id");
+      if (!negocio_id) return; // seguridad extra
+
       const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
       const data = await res.json();
       setPedidos(data);
@@ -14,7 +16,13 @@ export default function DashboardV2() {
     }
   };
 
+  // 🔹 Verificación de sesión + polling
   useEffect(() => {
+    const negocio_id = localStorage.getItem("negocio_id");
+    if (!negocio_id) {
+      window.location.href = "/"; // no logueado → login
+      return;
+    }
     fetchPedidos();
     const interval = setInterval(fetchPedidos, 5000);
     return () => clearInterval(interval);
@@ -53,8 +61,31 @@ export default function DashboardV2() {
         fontFamily: "Inter, sans-serif",
         backgroundColor: "#f5f6fa",
         minHeight: "100vh",
+        position: "relative",
       }}
     >
+      {/* Botón de cerrar sesión */}
+      <button
+        onClick={() => {
+          localStorage.removeItem("negocio_id");
+          localStorage.removeItem("negocio_nombre");
+          window.location.href = "/";
+        }}
+        style={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          backgroundColor: "#dc3545",
+          color: "white",
+          border: "none",
+          padding: "8px 12px",
+          borderRadius: "6px",
+          cursor: "pointer",
+        }}
+      >
+        Cerrar sesión
+      </button>
+
       <h1 style={{ fontSize: "28px", fontWeight: "700", marginBottom: "20px" }}>
         📦 Panel de Pedidos
       </h1>
@@ -128,7 +159,10 @@ export default function DashboardV2() {
             {pedidos.map((p) => (
               <tr
                 key={p.id}
-                style={{ backgroundColor: colorEstado(p.estado), transition: "0.3s" }}
+                style={{
+                  backgroundColor: colorEstado(p.estado),
+                  transition: "0.3s",
+                }}
               >
                 <td style={{ padding: "10px" }}>{p.id}</td>
                 <td style={{ padding: "10px" }}>{p.cliente_nombre}</td>
