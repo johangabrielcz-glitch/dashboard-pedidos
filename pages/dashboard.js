@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 
 export default function DashboardV2() {
   const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true); // verifica sesión
 
   const fetchPedidos = async () => {
     try {
       const negocio_id = localStorage.getItem("negocio_id");
-      if (!negocio_id) return; // seguridad extra
+      if (!negocio_id) return;
 
       const res = await fetch(`/api/pedidos?negocio_id=${negocio_id}`);
       const data = await res.json();
@@ -25,6 +26,7 @@ export default function DashboardV2() {
     }
     fetchPedidos();
     const interval = setInterval(fetchPedidos, 5000);
+    setLoading(false); // sesión confirmada
     return () => clearInterval(interval);
   }, []);
 
@@ -53,6 +55,9 @@ export default function DashboardV2() {
         return "white";
     }
   };
+
+  // 🔹 Mientras se confirma sesión, no renderiza nada
+  if (loading) return null;
 
   return (
     <div
